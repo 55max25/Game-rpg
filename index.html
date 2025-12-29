@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>RPG Solo Leveling</title>
+<style>
+/* (CSS sama seperti sebelumnya, dipadatkan agar ringkas) */
+body {
+  background: radial-gradient(circle at center, #1a1a1a, #0d0d0d 70%);
+  color: #e4e4e4;
+  font-family: "Segoe UI", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+/* Judul */
+h2 {
+  margin: 15px 0;
+  text-shadow: 0 0 8px #5b57ff;
+}
+
+/* Panel Status */
+.status-box {
+  width: 240px;
+  background: rgba(30,30,45,0.9);
+  border: 1px solid #555;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(90,85,255,0.3);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+/* HP & XP BAR */
+.bar {
+  width: 100%;
+  height: 14px;
+  border-radius: 10px;
+  background: #222;
+  margin: 4px 0 6px 0;
+  overflow: hidden;
+}
+.hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff4b4b, #b30000);
+}
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #71FF00, #00FF59 );
+}
+.mp-fill {
+height: 100%;
+background: linear-gradient(90deg, #3ba8ff, #0048b3);
+}
+/* Container tombol */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 15px auto;
+  max-width: 850px;
+}
+
+/* Kasih jarak dari tombol ke area pertarungan */
+.battle-container {
+  margin-top: 30px; 
+}
+
+/* Panel */
+.player-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Tombol */
+button {
+  margin: 6px;
+  padding: 12px 20px;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: 0.15s;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* Warna tombol */
+.btn-attack { background: #ff3232; box-shadow: 0 0 12px #ff3232; }
+.btn-skill  { background: #5b57ff; box-shadow: 0 0 12px #5b57ff; }
+.btn-buff   { background: #28a745; box-shadow: 0 0 12px #28a745; }
+.btn-save   { background: #ffaa00; box-shadow: 0 0 12px #ffaa00; }
+.btn-load   { background: #00c7ff; box-shadow: 0 0 12px #00c7ff; }
+.btn-reset  { background: #777;    box-shadow: 0 0 12px #777; }
+
+/* Hover efek neon */
+button:hover {
+  filter: brightness(1.4);
+}
+
+/* Log */
+#log {
+  width: 440px;
+  height: 180px;
+  background: rgba(15,15,25,0.9);
+  border: 1px solid #444;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: inset 0 0 15px #000, 0 0 12px rgba(90,85,255,0.4);
+  margin: 15px auto;
+  overflow-y: auto;
+  text-align: left;
+  line-height: 1.4em;
+  font-size: 13px;
+}
+
+.enemy-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative; /* tambahkan ini! supaya efek bisa posisi relatif ke musuh */
+}
+
+/* 🔥 Efek slash di posisi musuh */
+#slashEffect {
+  position: absolute;
+  width: 250px;
+  height: 10px;
+  background: linear-gradient(90deg, transparent, #ff0000, #ffffff, #ff0000, transparent);
+  top: 40%; /* ubah tinggi agar sejajar dengan musuh */
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-25deg);
+  opacity: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 0 15px red) drop-shadow(0 0 40px crimson);
+}
+.slashAnim {
+  animation: slashAnim 0.45s ease-out forwards;
+}
+
+@keyframes slashAnim {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.3) rotate(-25deg); }
+  70% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(-25deg); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.8) rotate(-25deg); }
+}
+
+/* ⚡ Thunder Gauntlet God - tangan emas & aura petir */
+.enemy-panel { position: relative; }
+
+#thunderHandContainer {
+  position: absolute;
+  top: 20%;
+  left: -250px;
+  width: 200px;
+  height: 200px;
+  opacity: 0;
+  transform: scale(1) rotate(10deg);
+  pointer-events: none;
+}
+
+#thunderHand {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 20px gold) drop-shadow(0 0 40px yellow);
+}
+
+/* aura petir kuning bergerak di sekeliling tangan */
+.electric-aura {
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,100,0.3) 0%, transparent 70%);
+  opacity: 0;
+  animation: electricPulse 1s infinite alternate;
+  filter: drop-shadow(0 0 25px yellow) drop-shadow(0 0 60px gold);
+}
+@keyframes electricPulse {
+  from { opacity: 0.3; transform: scale(0.9) rotate(0deg); }
+  to   { opacity: 0.8; transform: scale(1.1) rotate(360deg); }
+}
+
+/* tangan bergerak ke arah musuh */
+.thunderHandAnim {
+  animation: thunderHandMove 1.6s ease-out forwards;
+}
+@keyframes thunderHandMove {
+  0%   { left: -250px; opacity: 0; transform: scale(0.9) rotate(15deg); }
+  30%  { left: 25%; opacity: 1; transform: scale(1.05) rotate(8deg); }
+  70%  { left: 52%; opacity: 1; transform: scale(1.1) rotate(0deg); }
+  100% { left: 52%; opacity: 0; transform: scale(1.1) rotate(0deg); }
+}
+
+/* ledakan emas */
+#thunderExplosion {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle, gold 0%, yellow 40%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 0 30px gold) drop-shadow(0 0 60px yellow);
+}
+.explosionAnim {
+  animation: explosionAnim 1s ease-out forwards;
+}
+@keyframes explosionAnim {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.4); }
+  60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.6); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
+}
+
+/* kilatan petir menyebar */
+#lightningEffect {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(255,230,0,0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 0 50px yellow inset, 0 0 80px gold;
+}
+.lightningAnim {
+  animation: lightningAnim 1.5s ease-out forwards;
+}
+@keyframes lightningAnim {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  40%  { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
+}
+
+#thunderHandContainer, #thunderExplosion, #lightningEffect {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* 💜 Efek Black Matter Chain - CSS-only version */
+#chainEffect {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+}
+
+#chainEffect.active {
+  opacity: 1;
+}
+
+/* bentuk rantai */
+.chain {
+  position: absolute;
+  width: 6px;
+  height: 30px;
+  left: 50%;
+  top: 0;
+  transform-origin: center top;
+  background: linear-gradient(180deg, rgba(180,0,255,0.8), rgba(80,0,150,0.4));
+  border-radius: 3px;
+  animation: chainGlow 1s infinite alternate, chainSwing 1.5s infinite ease-in-out;
+  box-shadow: 0 0 10px rgba(200,0,255,0.8), 0 0 20px rgba(150,0,255,0.5);
+}
+
+/* posisi rantai (3 potong melingkar) */
+.chain:nth-child(1){ transform: rotate(0deg) translateY(0); }
+.chain:nth-child(2){ transform: rotate(120deg) translateY(0); }
+.chain:nth-child(3){ transform: rotate(240deg) translateY(0); }
+
+/* rantai menyala */
+@keyframes chainGlow {
+  from { filter: brightness(1) drop-shadow(0 0 5px #c060ff); }
+  to   { filter: brightness(1.6) drop-shadow(0 0 15px #d080ff); }
+}
+
+/* rantai sedikit bergoyang */
+@keyframes chainSwing {
+  0%,100% { transform: rotate(var(--rot,0deg)) translateY(0); }
+  50% { transform: rotate(calc(var(--rot,0deg) + 5deg)) translateY(2px); }
+}
+</style>
+</head>
+<body>
+
+<h2>RPG Solo Leveling - Turn Based</h2>
+
+<div class="battle-container">
+<div class="player-panel">
+  <img id="playerImg" src="player.png" width="110" alt="Player">
+
+  <div id="playerInfo" class="status-box">
+    <div><b>PLAYER</b></div>
+
+    <!-- HP Bar -->
+    <div class="bar">
+      <div id="playerHpBar" class="hp-fill" style="width:100%"></div>
+    </div>
+
+    <!-- XP Bar -->
+    <div class="bar">
+      <div id="playerXpBar" class="xp-fill" style="width:0%"></div>
+    </div>
+    
+    <div class="bar">
+      <div id="playerMpBar" class="mp-fill"
+          style="width:0%"></div>
+    </div>
+
+    <div id="playerStatsText"></div>
+  </div>
+</div>
+
+<div class="enemy-panel">
+  <img id="enemyImg" src="enemy.png" width="110" alt="Enemy">
+  
+  <div id="slashEffect"></div>
+<!-- ⚡ Efek Thunder Gauntlet -->
+<div id="thunderHandContainer">
+  <img id="thunderHand" src="gold_hand.png" alt="Thunder Hand">
+  <div class="electric-aura"></div>
+</div>
+<div id="thunderExplosion"></div>
+<div id="lightningEffect"></div>
+<!-- 🔗 Efek Black Matter Chain -->
+<div id="chainEffect">
+  <div class="chain"></div>
+  <div class="chain"></div>
+  <div class="chain"></div>
+</div>
+
+  <div id="enemyInfo" class="status-box">
+    <div><b>MUSUH</b></div>
+
+    <!-- HP Bar Musuh -->
+    <div class="bar">
+      <div id="enemyHpBar" class="hp-fill" style="width:100%"></div>
+    </div>
+
+    <div id="enemyStatsText"></div>
+  </div>
+</div>
+
+<div class="actions">
+  <button class="btn-attack" onclick="attack()">Serang</button>
+
+  <button class="btn-skill" onclick="unlockSkill()">Unlock SoulEater</button>
+  <button class="btn-skill" onclick="useSkill()">SoulEater</button>
+  
+  <button class="btn-skill" onclick="unlockThunder()">Unlock Gaunlet Thunder God
+  <button class= "btn-skill" onclick="useThunder()">Gaunlet Thunder God</button>
+
+  <button class="btn-skill" onclick="unlockChainSkill()">Unlock Black Matter Chain</button>
+  <button class="btn-skill" onclick="useChainSkill()" id="btnChainSkill" style="display:none;">Black Matter Chain MODE</button>
+
+  <button class="btn-buff" onclick="unlockBuff(0)">Unlock Beserk</button>
+  <button class="btn-buff" onclick="unlockBuff(1)">Unlock Power Up</button>
+  <button class="btn-buff" onclick="useBuff(0)">Beserk</button>
+  <button class="btn-buff" onclick="useBuff(1)">Power Up</button>
+
+  <button class="btn-save" onclick="saveGame()">Save</button>
+  <button class="btn-load" onclick="loadGame()">Load</button>
+  <button class="btn-reset" onclick="deleteSave()">Reset Save</button>
+</div>
+
+<h3>Log Pertarungan</h3>
+<div id="log"></div>
+
+<script>
+/* ============================
+   Data default (inisialisasi)
+   ============================ */
+const DEFAULT_PLAYER = {
+  level:1, hp:100, maxHp:100,
+  mp:10, maxMp:10,
+  attack:10, xp:0, xpNext:20, sp:0
+};
+
+let player = {...DEFAULT_PLAYER};
+
+let skill = {
+  name:"SoulEater", damage:99999, cooldown:20, currentCd:0, unlocked:false, costSP:20
+};
+
+let chainSkill = {
+  name:"Black Matter Chain", mpCost:1, unlocked:false, active:false, costSP:10, stunCounter:0
+};
+
+let buffs = [
+  { name:"Beserk", bonusHP:50, bonusATK:0, duration:3, activeTurns:0, cooldown:5, currentCd:0, unlocked:false, costSP:5 },
+  { name:"Power Up", bonusHP:0, bonusATK:10, duration:3, activeTurns:0, cooldown:4, currentCd:0, unlocked:false, costSP:5 }
+];
+
+let enemy = null;
+let playerTurn = true;
+
+/* ============================
+   UI & helper
+   ============================ */
+function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+
+function updateUI(){
+  // safe guards: jangan bagi 0
+  if(!player.xpNext || player.xpNext<=0) player.xpNext = 20;
+  if(!player.maxHp || player.maxHp<=0) player.maxHp = 100;
+  if(!player.maxMp || player.maxMp<=0) player.maxMp = 10;
+
+  const hpPercent = clamp((player.hp/player.maxHp)*100,0,100);
+  const xpPercent = clamp((player.xp/player.xpNext)*100,0,100);
+  const mpPercent = clamp((player.mp/player.maxMp)*100,0,100);
+
+  document.getElementById("playerHpBar").style.width = hpPercent + "%";
+  document.getElementById("playerXpBar").style.width = xpPercent + "%";
+  document.getElementById("playerMpBar").style.width = mpPercent + "%";
+
+  let statHtml = `HP: ${player.hp}/${player.maxHp}<br>
+                  MP: ${player.mp}/${player.maxMp}<br>
+                  ATK: ${player.attack}<br>
+                  LV: ${player.level}<br>
+                  XP: ${player.xp}/${player.xpNext}<br>
+                  SP: ${player.sp}<br>`;
+
+  if(chainSkill.active) statHtml += "<br>🌀 Chain Mode: ACTIVE";
+
+  document.getElementById("playerStatsText").innerHTML = statHtml;
+
+  if(enemy){
+    const ePercent = clamp((enemy.hp/enemy.maxHp)*100,0,100);
+    document.getElementById("enemyHpBar").style.width = ePercent + "%";
+    document.getElementById("enemyStatsText").innerHTML = `${enemy.name}<br>HP: ${enemy.hp}/${enemy.maxHp}`;
+  } else {
+    document.getElementById("enemyStatsText").innerHTML = "Tidak ada musuh";
+    document.getElementById("enemyHpBar").style.width = "0%";
+  }
+
+  // tombol Chain muncul saat unlocked
+  document.getElementById("btnChainSkill").style.display = chainSkill.unlocked ? "inline-block" : "none";
+}
+
+function log(msg){
+  const L = document.getElementById("log");
+  L.innerHTML += msg + "<br>";
+  L.scrollTop = L.scrollHeight;
+}
+
+/* ============================
+   Enemy spawn
+   ============================ */
+function spawnEnemy(){
+  const names = ["Slime","Goblin","Wolf","Skeleton"];
+  const name = names[Math.floor(Math.random()*names.length)];
+  const hp = 30 + player.level*12;
+  enemy = { name, hp, maxHp:hp, attack: 5 + player.level*3, xpReward: 8 + player.level*5 };
+  // safe: kalau filenya nggak ada, browser tunjukkan broken image — itu normal.
+  document.getElementById("enemyImg").src = name.toLowerCase()+".png";
+  log(`⚔️ Musuh muncul: ${name}`);
+  playerTurn = true;
+  updateUI();
+}
+
+/* ============================
+   Player actions
+   ============================ */
+function attack(){
+  if(!playerTurn){ log("⚠️ Tunggu giliranmu!"); return; }
+  if(!enemy){ log("❌ Belum ada musuh!"); return; }
+
+  // 🔥 Trigger Slash Animation
+  const slash = document.getElementById("slashEffect");
+  slash.classList.remove("slashAnim");
+  void slash.offsetWidth; // reset anim
+  slash.classList.add("slashAnim");
+
+  enemy.hp -= player.attack;
+  log(`🗡️ Kamu menyerang (-${player.attack})`);
+  endPlayerTurn();
+}
+
+function useSkill(){
+  if(!playerTurn){ log("⚠️ Tunggu giliranmu!"); return; }
+  if(!enemy){ log("❌ Belum ada musuh!"); return; }
+  if(!skill.unlocked){ log("❌ SoulEater belum terbuka!"); return; }
+  if(skill.currentCd > 0){ log(`❌ SoulEater cooldown (${skill.currentCd})`); return; }
+
+  enemy.hp -= skill.damage;
+  skill.currentCd = skill.cooldown;
+  log(`🔥 SoulEater! (-${skill.damage})`);
+  endPlayerTurn();
+}
+
+function unlockSkill(){
+  if(skill.unlocked){ log("✔️ SoulEater sudah terbuka"); return; }
+  if(player.sp < skill.costSP){ log("❌ SP tidak cukup"); return; }
+  player.sp -= skill.costSP;
+  skill.unlocked = true;
+  log("🔥 SoulEater terbu6fka!");
+  updateUI();
+}
+
+/* ============================
+   Chain skill (baru)
+   - tidak menghapus SoulEater
+   - aktif selama MP > 0, mengurangi MP tiap giliran musuh
+   - setelah >10 turn stun, enemy kena overload damage per-turn
+   ============================ */
+function unlockChainSkill(){
+  if(chainSkill.unlocked){ log("✔️ Chain sudah terbuka"); return; }
+  if(player.sp < chainSkill.costSP){ log("❌ SP tidak cukup"); return; }
+  player.sp -= chainSkill.costSP;
+  chainSkill.unlocked = true;
+  log("⛓️ Black Matter Chain terbuka!");
+  updateUI();
+}
+
+function useChainSkill(){
+  if(!chainSkill.unlocked){ log("❌ Chain belum terbuka"); return; }
+
+  chainSkill.active = !chainSkill.active;
+  chainSkill.stunCounter = 0;
+  log(chainSkill.active ? "⛓️ Chain MODE AKTIF!" : "🔓 Chain MODE NONAKTIF!");
+  updateUI();
+
+  const chainEffect = document.getElementById("chainEffect");
+
+  if(chainSkill.active){
+    chainEffect.classList.add("active");
+  } else {
+    chainEffect.classList.remove("active");
+  }
+}
+
+/* ============================
+   Buffs
+   ============================ */
+function useBuff(i){
+  if(!playerTurn){ log("⚠️ Tunggu giliranmu!"); return; }
+  const b = buffs[i];
+  if(!b.unlocked){ log("❌ Buff belum terbuka!"); return; }
+  if(b.currentCd > 0){ log("❌ Buff cooldown!"); return; }
+
+  b.activeTurns = b.duration;
+  b.currentCd = b.cooldown;
+  player.maxHp += b.bonusHP;
+  player.hp += b.bonusHP;
+  player.attack += b.bonusATK;
+  log(`💪 ${b.name} aktif!`);
+  endPlayerTurn();
+}
+
+function unlockBuff(i){
+  const b = buffs[i];
+  if(b.unlocked){ log("✔️ Buff sudah terbuka"); return; }
+  if(player.sp < b.costSP){ log("❌ SP tidak cukup"); return; }
+  player.sp -= b.costSP;
+  b.unlocked = true;
+  log(`✨ ${b.name} terbuka!`);
+  updateUI();
+}
+
+/* ============================
+   Thunder Gauntlet God Skill
+   ============================ */
+let thunder = {
+  name: "Thunder Gauntlet God",
+  damage: 15,
+  cooldown: 3,
+  currentCd: 0,
+  unlocked: false,
+  costSP: 5
+};
+
+function unlockThunder(){
+  if(thunder.unlocked){ log("✔️ Thunder Gauntlet God sudah terbuka"); return; }
+  if(player.sp < thunder.costSP){ log("❌ SP tidak cukup untuk Thunder Gauntlet God"); return; }
+  player.sp -= thunder.costSP;
+  thunder.unlocked = true;
+  log("⚡ Thunder Gauntlet God terbuka!");
+  document.getElementById("btnThunder").style.display = "inline-block";
+  updateUI();
+}
+
+function useThunder(){
+  if(!playerTurn){ log("⚠️ Tunggu giliranmu!"); return; }
+  if(!enemy){ log("❌ Belum ada musuh!"); return; }
+  if(!thunder.unlocked){ log("❌ Skill belum terbuka!"); return; }
+  if(thunder.currentCd > 0){ log(`❌ Cooldown (${thunder.currentCd})`); return; }
+
+  const container = document.getElementById("thunderHandContainer");
+  const aura = container.querySelector(".electric-aura");
+  const boom = document.getElementById("thunderExplosion");
+  const lightning = document.getElementById("lightningEffect");
+
+  container.classList.remove("thunderHandAnim");
+  boom.classList.remove("explosionAnim");
+  lightning.classList.remove("lightningAnim");
+  void container.offsetWidth;
+
+  // mainkan efek
+  container.classList.add("thunderHandAnim");
+  aura.style.opacity = "1";
+  setTimeout(()=> boom.classList.add("explosionAnim"), 1200);
+  setTimeout(()=> lightning.classList.add("lightningAnim"), 1300);
+  setTimeout(()=> aura.style.opacity = "0", 1600);
+
+  enemy.hp -= thunder.damage;
+  thunder.currentCd = thunder.cooldown;
+  log(`⚡ Thunder Gauntlet God menghantam musuh! (-${thunder.damage})`);
+  endPlayerTurn();
+}
+
+// kurangi cooldown setiap akhir giliran
+const oldEndTurn = endTurn;
+endTurn = function(){
+  if(thunder.currentCd > 0) thunder.currentCd--;
+  oldEndTurn();
+};
+
+// kurangi cooldown setiap akhir giliran — aman tanpa deklarasi ulang
+const prevEndTurn = endTurn;
+endTurn = function(){
+  if(thunder.currentCd > 0) thunder.currentCd--;
+  if(typeof prevEndTurn === "function") prevEndTurn();
+};
+
+/* ============================
+   Turn system
+   ============================ */
+function endPlayerTurn(){
+  endTurn(); updateUI();
+  if(enemy && enemy.hp > 0){
+    playerTurn = false;
+    setTimeout(enemyTurn, 700);
+  }
+}
+
+function enemyTurn(){
+  if(!enemy) return;
+
+  if(chainSkill.active){
+    // chain aktif → musuh ter-stun, MP dikurangi tiap giliran musuh
+    player.mp = Math.max(0, player.mp - chainSkill.mpCost);
+    chainSkill.stunCounter = (chainSkill.stunCounter || 0) + 1;
+    log(`${enemy.name} terkunci! (Turn ${chainSkill.stunCounter})`);
+
+    if(chainSkill.stunCounter > 10){
+      const dmg = Math.floor(player.attack * 0.6);
+      enemy.hp -= dmg;
+      log(`☠️ Overload! ${enemy.name} kena ${dmg} dmg`);
+    }
+
+    if(player.mp <= 0){
+      chainSkill.active = false;
+      chainSkill.stunCounter = 0;
+      log("💧 MP habis! Musuh bebas.");
+    }
+
+    endTurn(); updateUI();
+    playerTurn = true;
+    return;
+  }
+
+  // jika tidak ter-stun → normal attack
+  player.hp -= enemy.attack;
+  log(`💥 ${enemy.name} menyerangmu! (-${enemy.attack})`);
+  if(player.hp <= 0){
+    player.hp = player.maxHp;
+    log("💀 Kamu tumbang → HP terisi penuh.");
+  }
+
+  endTurn(); updateUI();
+  playerTurn = true;
+}
+
+function endTurn(){
+  if(skill.currentCd > 0) skill.currentCd--;
+
+  buffs.forEach(b => {
+    if(b.currentCd > 0) b.currentCd--;
+    if(b.activeTurns > 0){
+      b.activeTurns--;
+      if(b.activeTurns === 0){
+        player.maxHp -= b.bonusHP;
+        player.attack -= b.bonusATK;
+        if(player.hp > player.maxHp) player.hp = player.maxHp;
+        log(`⚠️ ${b.name} berakhir`);
+      }
+    }
+  });
+
+  if(enemy && enemy.hp <= 0) enemyDie();
+}
+
+/* ============================
+   Enemy dead, level up, save/load
+   ============================ */
+function enemyDie(){
+  log(`🎉 ${enemy.name} kalah! XP +${enemy.xpReward}`);
+  player.xp += enemy.xpReward;
+  enemy = null;
+  levelUpCheck();
+  setTimeout(spawnEnemy, 900);
+  updateUI();
+}
+
+function levelUpCheck(){
+  while(player.xp >= player.xpNext){
+    player.xp -= player.xpNext;
+    player.level++;
+    player.maxHp += 25;
+    player.hp = player.maxHp;
+    player.attack += 4;
+    player.xpNext += 20;
+    player.maxMp = (player.maxMp || 10) + 5;
+    player.mp = player.maxMp;
+    player.sp = (player.sp || 0) + 1;
+    log("⬆️ LEVEL UP! HP/MP full. +SP");
+  }
+}
+
+function saveGame(){
+  try{
+    const payload = { player, enemy, skill, buffs, chainSkill, thunder }; // <– tambahkan thunder
+    localStorage.setItem("RPG_SAVE", JSON.stringify(payload));
+    log("💾 Game tersimpan.");
+  }catch(e){ log("❌ Gagal menyimpan: " + e.message); }
+}
+
+function loadGame(){
+  try{
+    const raw = localStorage.getItem("RPG_SAVE");
+    if(!raw){ log("📂 Tidak ada save."); return; }
+    const d = JSON.parse(raw);
+
+    player = Object.assign({}, DEFAULT_PLAYER, d.player || {});
+    skill = Object.assign({}, skill, d.skill || {});
+    buffs = d.buffs || buffs;
+    chainSkill = Object.assign({}, chainSkill, d.chainSkill || {});
+    thunder = Object.assign({}, thunder, d.thunder || {}); // <– tambahkan ini
+    enemy = d.enemy || null;
+
+    // pastikan tombol thunder muncul kalau sudah unlock
+    if(thunder.unlocked) {
+      document.getElementById("btnThunder").style.display = "inline-block";
+    }
+
+    if(player.mp === undefined) player.mp = player.maxMp || 10;
+    if(player.maxMp === undefined) player.maxMp = 10;
+    if(!player.xpNext) player.xpNext = 20;
+
+    log("📂 Save dimuat.");
+    updateUI();
+  }catch(e){ log("❌ Gagal load: " + e.message); }
+}
+
+function deleteSave(){ localStorage.removeItem("RPG_SAVE"); log("❌ Save dihapus"); }
+
+/* ============================
+   Start
+   ============================ */
+loadGame();
+if(!enemy) spawnEnemy();
+updateUI();
+</script>
+
+</body>
+</html>

@@ -240,22 +240,17 @@ button:hover {
   100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
 }
 
-#thunderHandContainer, #thunderExplosion, #lightningEffect {
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-}
-
-/* 💜 Efek Black Matter Chain - CSS-only version */
+/* 💜 Black Matter Chain – versi rantai SVG animasi */
 #chainEffect {
   position: absolute;
-  top: 35%;
+  top: 40%;
   left: 50%;
-  width: 120px;
-  height: 120px;
+  width: 220px;
+  height: 220px;
   transform: translate(-50%, -50%);
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.4s ease;
   z-index: 2;
 }
 
@@ -263,35 +258,29 @@ button:hover {
   opacity: 1;
 }
 
-/* bentuk rantai */
-.chain {
-  position: absolute;
-  width: 6px;
-  height: 30px;
-  left: 50%;
-  top: 0;
-  transform-origin: center top;
-  background: linear-gradient(180deg, rgba(180,0,255,0.8), rgba(80,0,150,0.4));
-  border-radius: 3px;
-  animation: chainGlow 1s infinite alternate, chainSwing 1.5s infinite ease-in-out;
-  box-shadow: 0 0 10px rgba(200,0,255,0.8), 0 0 20px rgba(150,0,255,0.5);
+.chain-path {
+  fill: none;
+  stroke: rgba(180, 0, 255, 0.9);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 15 10;
+  filter: drop-shadow(0 0 6px #a020ff) drop-shadow(0 0 14px #c060ff);
+  animation: chainMove 1.2s linear infinite;
 }
 
-/* posisi rantai (3 potong melingkar) */
-.chain:nth-child(1){ transform: rotate(0deg) translateY(0); }
-.chain:nth-child(2){ transform: rotate(120deg) translateY(0); }
-.chain:nth-child(3){ transform: rotate(240deg) translateY(0); }
-
-/* rantai menyala */
-@keyframes chainGlow {
-  from { filter: brightness(1) drop-shadow(0 0 5px #c060ff); }
-  to   { filter: brightness(1.6) drop-shadow(0 0 15px #d080ff); }
+/* animasi gerakan rantai menyala */
+@keyframes chainMove {
+  to { stroke-dashoffset: -25; }
 }
 
-/* rantai sedikit bergoyang */
-@keyframes chainSwing {
-  0%,100% { transform: rotate(var(--rot,0deg)) translateY(0); }
-  50% { transform: rotate(calc(var(--rot,0deg) + 5deg)) translateY(2px); }
+/* efek getaran halus seluruh rantai */
+#chainEffect.active {
+  animation: chainPulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes chainPulse {
+  0%   { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+  100% { transform: translate(-50%, -50%) scale(1.05); filter: brightness(1.4); }
 }
 </style>
 </head>
